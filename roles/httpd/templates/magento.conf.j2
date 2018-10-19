@@ -1,0 +1,9 @@
+Listen 8080
+ServerAdmin {{ magento_admin_email }}
+ServerName {{ server_hostname }}
+
+<Directory "/var/www/html">
+    Options -Indexes -FollowSymLinks -MultiViews
+    AllowOverride All
+    Require all granted
+</Directory>

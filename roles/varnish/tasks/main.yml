@@ -1,0 +1,20 @@
+---
+- name: add varnish repository definition
+  yum_repository:
+    name: varnishcache_varnish5
+    description: Varnish Cache
+    baseurl: https://packagecloud.io/varnishcache/varnish5/el/6/$basearch
+    gpgkey: https://packagecloud.io/varnishcache/varnish5/gpgkey
+    repo_gpgcheck: yes
+
+- name: install varnish
+  yum: name=varnish state=present
+  
+- name: copy varnish configuration
+  template: src=varnish dest=/etc/sysconfig/varnish
+
+- name: copy varnish vcl configuration
+  template: src=default.vcl dest=/etc/varnish/default.vcl
+
+- name: varnish initial start
+  service: name=varnish state=started enabled=yes

@@ -1,0 +1,16 @@
+---
+- name: install php and modules
+  yum:
+    state: present
+    name: 
+    - php71
+    - php71-bcmath
+    - php71-intl
+    - php71-xml
+    - php71-pdo
+    - php71-mbstring
+    - php71-mysqlnd
+    - php71-gd
+    - php71-mcrypt
+    - php71-soap
+    - mod24_ssl

@@ -1,0 +1,22 @@
+---
+- name: install httpd
+  yum:
+    name: 
+      - httpd24
+      - httpd24-tools
+    state: present
+
+- name: remove unused modules
+  file: 
+    state: absent
+    path:
+    - /etc/httpd/conf.d/autoindex.conf
+    - /etc/httpd/conf.d/welcome.conf
+
+- name: create httpd configuration file
+  template: src=magento.conf.j2 dest=/etc/httpd/conf.d/magento.conf
+  notify:
+  - restart httpd
+
+- name: httpd initial start
+  service: name=httpd state=started enabled=yes

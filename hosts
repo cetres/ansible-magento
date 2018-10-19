@@ -1,0 +1,31 @@
+[magento]
+<hostname ou ip_address>
+
+[magento:vars]
+# You have to enter on Magento website and download the binaries for installation
+magento_origin_url=https://<fqdn>/<path>/Magento-CE-2.2.6-2018-09-07-02-12-38.tar.gz
+
+# Database configurations
+magento_db_name=magento
+magento_db_user=magento
+magento_db_password=<create a random password>
+mysql_port=3306
+
+# Magento parameters
+magento_language=pt_BR
+magento_currency=BRL
+
+# Server parameters
+server_hostname=<hostname>
+server_timezone=America/Sao_Paulo
+server_swap_path=/.swap
+server_web_user=apache
+
+# administrator info
+magento_admin_firstname=First
+magento_admin_lastname=Last
+magento_admin_email=email@mydomain.com
+magento_admin_user=admin
+magento_admin_pass=<create a random password>
+magento_domain=http://fqdn.domain.
+magento_admin_uri=<random location of admin. Example: admin_ldfkgndsrf>

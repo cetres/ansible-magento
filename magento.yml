@@ -1,0 +1,16 @@
+# Ansible playbook to install Magento on a AWS Linux AMI.
+# Make sure you have the right private-key used on AWS to connect to the ec2.
+# Run: ansible-playbook -i hosts playbooks/magento.yml
+
+---
+- name: install magento and dependencies
+  hosts: magento
+  user: ec2-user
+
+  roles:
+    - common
+    - mysql
+    - httpd
+    - php
+    - varnish
+    - magento

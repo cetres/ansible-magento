@@ -1,0 +1,21 @@
+---
+- name: install mysql package
+  yum:
+    name:
+    - mysql56-server
+    - MySQL-python27
+    state: present
+
+- name: create mysql configuration file
+  template: src=my.cnf.j2 dest=/etc/my.cnf
+  notify:
+  - restart mysql
+
+- name: mysql initial start
+  service: name=mysqld state=started enabled=true
+
+- name: create database
+  mysql_db: name={{ magento_db_name }} state=present
+
+- name: configure database user
+  mysql_user: name={{ magento_db_user }} password={{ magento_db_password }} priv={{ magento_db_name }}.*:ALL host='localhost' state=present
