@@ -1,0 +1,107 @@
+# Ansible playbook to install Magento on a AWS Linux AMI.
+# Make sure you have the right private-key used on AWS to connect to the ec2.
+# Run: ansible-playbook -i hosts playbooks/magento.yml
+
+---
+- name: Provisioning an instance at Google Cloud
+  hosts: provisioning
+  gather_facts: no
+  connection: local
+
+  tasks:
+  - name: create a disk
+    gcp_compute_disk:
+        name: 'magento-disk'
+        size_gb: 50
+        source_image: "{{ gcp_machine_image }}"
+        zone: "{{ gcp_zone }}"
+        project: "{{ gcp_project }}"
+        auth_kind: "{{ gcp_auth_kind }}"
+        service_account_file: "{{ gcp_service_account_file }}"
+        scopes:
+          - https://www.googleapis.com/auth/compute
+        state: present
+    register: disk
+  - name: create a network
+    gcp_compute_network:
+        name: 'magento-network'
+        project: "{{ gcp_project }}"
+        auth_kind: "{{ gcp_auth_kind }}"
+        service_account_file: "{{ gcp_service_account_file }}"
+        scopes:
+          - https://www.googleapis.com/auth/compute
+        state: present
+    register: network
+  - name: create an address
+    gcp_compute_address:
+        name: 'magento-address'
+        region: "{{ gcp_region }}"
+        project: "{{ gcp_project }}"
+        auth_kind: "{{ gcp_auth_kind }}"
+        service_account_file: "{{ gcp_service_account_file }}"
+        scopes:
+          - https://www.googleapis.com/auth/compute
+        state: present
+    register: address
+  - name: create a firewall
+    gcp_compute_firewall:
+      name: "magento-firewall"
+      network: "{{ network.selfLink }}"
+      allowed:
+      - ip_protocol: tcp
+        ports:
+        - '22'
+        - '80'
+      target_tags:
+      - magento-app
+      source_ranges:
+      - '0.0.0.0/0'
+      project: "{{ gcp_project }}"
+      auth_kind: "{{ gcp_auth_kind }}"
+      service_account_file: "{{ gcp_service_account_file }}"
+      state: present
+  - name: create an instance
+    gcp_compute_instance:
+        state: present
+        name: magento-vm
+        machine_type: "{{ gcp_machine_type }}"
+        metadata:
+          istest: true
+        disks:
+          - auto_delete: true
+            boot: true
+            source: "{{ disk }}"
+        network_interfaces:
+            - network: "{{ network }}"
+              access_configs:
+                - name: 'External NAT'
+                  nat_ip: "{{ address }}"
+                  type: 'ONE_TO_ONE_NAT'
+        tags:
+          items: [ magento-app, magento-db ]
+        zone: "{{ gcp_zone }}"
+        project: "{{ gcp_project }}"
+        auth_kind: "{{ gcp_auth_kind }}"
+        service_account_file: "{{ gcp_service_account_file }}"
+        scopes:
+          - https://www.googleapis.com/auth/compute
+    register: instance
+
+  - name: Wait for SSH to come up
+    wait_for: host={{ address.address }} port=22 delay=10 timeout=60
+
+  - name: Add host to groupname
+    add_host: hostname={{ address.address }} groupname=magento
+
+- name: Manage new instances
+  hosts: magento
+  connection: ssh
+  user: "{{ gcp_ssh_username }}"
+  become: True
+  roles:
+    - common
+    - mysql
+    - httpd
+    - php
+    - varnish
+    - magento

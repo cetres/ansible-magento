@@ -1,18 +1,51 @@
 ---
-- name: install mysql package
+- name: install mariadb server packages on CentOS/RHEL
+  yum:
+    name:
+    - rh-mariadb102-mariadb-server-galera
+    - MySQL-python
+    state: present
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+- name: install mariadb server packages on other OS
   yum:
     name:
     - mysql56-server
     - MySQL-python27
     state: present
+  when: ansible_distribution != 'CentOS' and ansible_distribution != 'Red Hat Enterprise Linux'
 
-- name: create mysql configuration file
+- name: add mysql context on CentOS/RHEL
+  file:
+    src: /opt/rh/rh-mariadb102/enable
+    dest: /etc/profile.d/rh-mariadb102.sh
+    owner: root
+    group: root
+    state: link
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+- name: set mysql exec on CentOS/RHEL
+  file:
+    src: /opt/rh/rh-mariadb102/root/usr/bin/mysql
+    dest: /usr/bin/mysql
+    owner: root
+    group: root
+    state: link
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+- name: create mysql configuration file on other OS
   template: src=my.cnf.j2 dest=/etc/my.cnf
   notify:
   - restart mysql
+  when: ansible_distribution != 'CentOS' and ansible_distribution != 'Red Hat Enterprise Linux'
 
-- name: mysql initial start
+- name: mysql initial start on CentOS/RHEL
+  service: name=rh-mariadb102-mariadb state=started enabled=true
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+- name: mysql initial start on other OS
   service: name=mysqld state=started enabled=true
+  when: ansible_distribution != 'CentOS' and ansible_distribution != 'Red Hat Enterprise Linux'
 
 - name: create database
   mysql_db: name={{ magento_db_name }} state=present

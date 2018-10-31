@@ -1,11 +1,22 @@
 ---
-- name: add varnish repository definition
+- name: add varnish repository definition on CentOS/RHEL
+  yum_repository:
+    name: varnishcache_varnish5
+    description: Varnish Cache
+    baseurl: https://packagecloud.io/varnishcache/varnish5/el/7/$basearch
+    gpgkey: https://packagecloud.io/varnishcache/varnish5/gpgkey
+    gpgcheck: no
+    repo_gpgcheck: yes
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+- name: add varnish repository definition on other OS
   yum_repository:
     name: varnishcache_varnish5
     description: Varnish Cache
     baseurl: https://packagecloud.io/varnishcache/varnish5/el/6/$basearch
     gpgkey: https://packagecloud.io/varnishcache/varnish5/gpgkey
     repo_gpgcheck: yes
+  when: ansible_distribution != 'CentOS' and ansible_distribution != 'Red Hat Enterprise Linux'
 
 - name: install varnish
   yum: name=varnish state=present

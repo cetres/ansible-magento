@@ -1,5 +1,30 @@
 ---
-- name: install php and modules
+- name: install php and modules on CentOS/RHEL
+  yum:
+    state: present
+    name: 
+    - rh-php71-php
+    - rh-php71-php-bcmath
+    - rh-php71-php-intl
+    - rh-php71-php-xml
+    - rh-php71-php-pdo
+    - rh-php71-php-mbstring
+    - rh-php71-php-mysqlnd
+    - rh-php71-php-gd
+    - rh-php71-php-mcrypt
+    - rh-php71-php-soap
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+- name: set php exec on CentOS/RHEL
+  file:
+    src: /opt/rh/rh-php71/root/usr/bin/php
+    dest: /usr/bin/php
+    owner: root
+    group: root
+    state: link
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+- name: install php and modules on other OS
   yum:
     state: present
     name: 
@@ -13,4 +38,4 @@
     - php71-gd
     - php71-mcrypt
     - php71-soap
-    - mod24_ssl
+  when: ansible_distribution != 'CentOS' and ansible_distribution != 'Red Hat Enterprise Linux'

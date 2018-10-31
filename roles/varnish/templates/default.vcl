@@ -1,6 +1,5 @@
-# This is a basic VCL configuration file for PageCache powered by Varnish for Magento module.
+vcl 4.0;
 
-# default backend definition.  Set this to point to your content server.
 backend default {
   .host = "127.0.0.1";
   .port = "8080";
@@ -32,34 +31,34 @@ sub vcl_recv {
         }
     }
 
-    if (req.request != "GET" &&
-        req.request != "HEAD" &&
-        req.request != "PUT" &&
-        req.request != "POST" &&
-        req.request != "TRACE" &&
-        req.request != "OPTIONS" &&
-        req.request != "DELETE" &&
-        req.request != "PURGE") {
+    if (req.method != "GET" &&
+        req.method != "HEAD" &&
+        req.method != "PUT" &&
+        req.method != "POST" &&
+        req.method != "TRACE" &&
+        req.method != "OPTIONS" &&
+        req.method != "DELETE" &&
+        req.method != "PURGE") {
         /* Non-RFC2616 or CONNECT which is weird. */
         return (pipe);
     }
 
-    # purge request
-    if (req.request == "PURGE") {
+    # purge method
+    if (req.method == "PURGE") {
         if (!client.ip ~ purge) {
-            error 405 "Not allowed.";
+            return(synth(405,"Not allowed."));
         }
         ban("obj.http.X-Purge-Host ~ " + req.http.X-Purge-Host + " && obj.http.X-Purge-URL ~ " + req.http.X-Purge-Regex + " && obj.http.Content-Type ~ " + req.http.X-Purge-Content-Type);
-        error 200 "Purged.";
+        return (purge);
     }
 
     # switch to admin backend configuration
     if (req.http.cookie ~ "adminhtml=") {
-        set req.backend = admin;
+        set req.backend_hint = admin;
     }
 
     # we only deal with GET and HEAD by default
-    if (req.request != "GET" && req.request != "HEAD") {
+    if (req.method != "GET" && req.method != "HEAD") {
         return (pass);
     }
 
@@ -95,7 +94,7 @@ sub vcl_recv {
     set req.url = regsuball(req.url,"\?gclid=[^&]+&","?"); # strips when QS = "?gclid=AAA&foo=bar"
     set req.url = regsuball(req.url,"&gclid=[^&]+",""); # strips when QS = "?foo=bar&gclid=AAA" or QS = "?foo=bar&gclid=AAA&bar=baz"
 
-    return (lookup);
+    return (hash);
 }
 
 # sub vcl_pipe {
@@ -120,20 +119,20 @@ sub vcl_hash {
         hash_data(server.ip);
     }
 
-    if (req.http.cookie ~ "PAGECACHE_ENV=") {
-        set req.http.pageCacheEnv = regsub(
-            req.http.cookie,
-            "(.*)PAGECACHE_ENV=([^;]*)(.*)",
-            "\2"
-        );
-        hash_data(req.http.pageCacheEnv);
-        remove req.http.pageCacheEnv;
-    }
+#    if (req.http.cookie ~ "PAGECACHE_ENV=") {
+#        set req.http.pageCacheEnv = regsub(
+#            req.http.cookie,
+#            "(.*)PAGECACHE_ENV=([^;]*)(.*)",
+#            "\2"
+#        );
+#        hash_data(req.http.pageCacheEnv);
+#        remove req.http.pageCacheEnv;
+#    }
 
     if (!(req.url ~ "^/(media|js|skin)/.*\.(png|jpg|jpeg|gif|css|js|swf|ico)$")) {
         call design_exception;
     }
-    return (hash);
+    return (lookup);
 }
 #
 # sub vcl_hit {
@@ -144,10 +143,11 @@ sub vcl_hash {
 #     return (fetch);
 # }
 
-sub vcl_fetch {
+sub vcl_backend_response {
     if (beresp.status == 500) {
-       set beresp.saintmode = 10s;
-       return (restart);
+       # TODO: fix with saintmode module install
+       #saintmode.blacklist(10s);
+       return (retry);
     }
     set beresp.grace = 5m;
 
@@ -157,14 +157,15 @@ sub vcl_fetch {
     }
 
     # add ban-lurker tags to object
-    set beresp.http.X-Purge-URL = req.url;
-    set beresp.http.X-Purge-Host = req.http.host;
+    set beresp.http.X-Purge-URL = bereq.url;
+    set beresp.http.X-Purge-Host = bereq.http.host;
 
     if (beresp.status == 200 || beresp.status == 301 || beresp.status == 404) {
         if (beresp.http.Content-Type ~ "text/html" || beresp.http.Content-Type ~ "text/xml") {
             if ((beresp.http.Set-Cookie ~ "NO_CACHE=") || (beresp.ttl < 1s)) {
                 set beresp.ttl = 0s;
-                return (hit_for_pass);
+                set beresp.uncacheable = true;
+                return (deliver);
             }
 
             # marker for vcl_deliver to reset Age:
@@ -178,8 +179,8 @@ sub vcl_fetch {
         }
         return (deliver);
     }
-
-    return (hit_for_pass);
+    set beresp.uncacheable = true;
+    return (deliver);
 }
 
 sub vcl_deliver {

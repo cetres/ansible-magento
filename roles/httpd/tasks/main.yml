@@ -1,10 +1,21 @@
 ---
-- name: install httpd
+- name: install httpd on CentOS/RHEL
+  yum:
+    name: 
+      - httpd
+      - httpd-tools
+      - mod_ssl
+    state: present
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+- name: install httpd on other OS
   yum:
     name: 
       - httpd24
       - httpd24-tools
+      - mod24_ssl
     state: present
+  when: ansible_distribution != 'CentOS' and ansible_distribution != 'Red Hat Enterprise Linux'
 
 - name: remove unused modules
   file: 

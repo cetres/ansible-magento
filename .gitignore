@@ -1,3 +1,2 @@
-hosts.local
-magento.retry
-hosts.local
+hosts.*
+*.retry

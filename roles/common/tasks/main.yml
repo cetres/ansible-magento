@@ -2,6 +2,10 @@
 - name: install epel repository
   yum: name=epel-release state=present
 
+- name: install Software Colections on CentOS/RHEL
+  yum: state=present name=centos-release-scl
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
 - name: upgrade all packages
   yum:
     name: '*'

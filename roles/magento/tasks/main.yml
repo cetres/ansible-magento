@@ -14,7 +14,7 @@
     mode: 0550
 
 - name: install script
-  shell: chdir={{ app_base_path }}/ ./bin/magento setup:install --language={{ magento_language }} --timezone={{ server_timezone }} --currency={{ magento_currency }} --db-host=localhost --db-name={{ magento_db_name }} --db-user={{ magento_db_user }} --db-password={{ magento_db_password }}  --base-url={{ magento_domain }} --admin-firstname={{ magento_admin_firstname }}  --admin-lastname={{ magento_admin_lastname }}  --admin-email={{ magento_admin_email }} --admin-user={{ magento_admin_user }} --admin-password={{ magento_admin_pass }} –-backend-frontname={{ magento_admin_uri }}
+  shell: chdir={{ app_base_path }}/ ./bin/magento setup:install --language={{ magento_language }} --timezone={{ server_timezone }} --currency={{ magento_currency }} --db-host=localhost --db-name={{ magento_db_name }} --db-user={{ magento_db_user }} --db-password={{ magento_db_password }}  --base-url={{ magento_domain }} --admin-firstname={{ magento_admin_firstname }}  --admin-lastname={{ magento_admin_lastname }}  --admin-email={{ magento_admin_email }} --admin-user={{ magento_admin_user }} --admin-password={{ magento_admin_pass }} --backend-frontname={{ magento_admin_uri }}
 
 - name: change dirs permissions
   file:
@@ -51,7 +51,7 @@
   become_user: "{{ server_web_user }}"
 
 - name: get admin uri 
-  shell: chdir={{ app_base_path }}/ ./bin/magento magento info:adminuri
+  shell: chdir={{ app_base_path }}/ ./bin/magento info:adminuri
   register: admin_uri
 
 - debug: msg="{{ admin_uri.stdout }}"
