@@ -18,6 +18,8 @@
     limit_item: stack
     value: 65536
 
+# Swap file was motivated to instalation on small memory machines
+# After several tests I recommend setup in at least 2GB memory VM
 - name: verify if swap exists
   stat:
     path: "{{ server_swap_path }}"

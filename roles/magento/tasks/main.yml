@@ -3,55 +3,66 @@
 - name: download and extract
   unarchive:
     src: "{{ magento_origin_url }}"
-    dest: "{{ app_base_path }}/"
+    dest: "{{ httpd_base_dir }}{{ app_base_path }}/"
     remote_src: yes
     owner: "{{ server_web_user }}"
   when: magento_origin_url is defined
 
 - name: set file permission magento
   file:
-    path: "{{ app_base_path }}/bin/magento"
+    path: "{{ httpd_base_dir }}{{ app_base_path }}/bin/magento"
     mode: 0550
 
 - name: install script
-  shell: chdir={{ app_base_path }}/ ./bin/magento setup:install --language={{ magento_language }} --timezone={{ server_timezone }} --currency={{ magento_currency }} --db-host=localhost --db-name={{ magento_db_name }} --db-user={{ magento_db_user }} --db-password={{ magento_db_password }}  --base-url={{ magento_domain }} --admin-firstname={{ magento_admin_firstname }}  --admin-lastname={{ magento_admin_lastname }}  --admin-email={{ magento_admin_email }} --admin-user={{ magento_admin_user }} --admin-password={{ magento_admin_pass }} --backend-frontname={{ magento_admin_uri }}
+  shell: chdir={{ httpd_base_dir }}{{ app_base_path }}/ ./bin/magento setup:install --language={{ magento_language }} --timezone={{ server_timezone }} --currency={{ magento_currency }} --db-host=localhost --db-name={{ magento_db_name }} --db-user={{ magento_db_user }} --db-password={{ magento_db_password }}  --base-url={{ magento_domain }} --admin-firstname={{ magento_admin_firstname }}  --admin-lastname={{ magento_admin_lastname }}  --admin-email={{ magento_admin_email }} --admin-user={{ magento_admin_user }} --admin-password={{ magento_admin_pass }} --backend-frontname={{ magento_admin_uri }}
+
+- set_fact:
+    magento_writable_dirs:
+      - '{{ httpd_base_dir }}{{ app_base_path }}/app/etc'
+      - '{{ httpd_base_dir }}{{ app_base_path }}/var'
+      - '{{ httpd_base_dir }}{{ app_base_path }}/pub/media'
+      - '{{ httpd_base_dir }}{{ app_base_path }}/generated'
+
+- name: set SELinux file context
+  sefcontext:
+    target: "{{ item }}(/.*)?"
+    setype: httpd_sys_rw_content_t
+    state: present
+  with_items: magento_writable_dirs
+
+- name: apply new SELinux file context to filesystem
+  command: restorecon -irv {{ item }}
+  with_items: magento_writable_dirs
 
 - name: change dirs permissions
   file:
-    path:
-    - "{{ app_base_path }}/app/etc/"
-    - "{{ app_base_path }}/var/"
-    - "{{ app_base_path }}/pub/media/"
-    - "{{ app_base_path }}/generated/"
+    path: "{{ item }}/"
     recurse: yes
     state: directory
     mode: 0775
     owner: "{{ server_web_user }}"
     group: root
+  with_items: magento_writable_dirs
 
 - name: ensure directories are owned by web user
-  command: chown -R {{ server_web_user }} {{ item }}
-  with_items:
-  - "{{ app_base_path }}/app/etc/"
-  - "{{ app_base_path }}/var/"
-  - "{{ app_base_path }}/pub/media/"
-  - "{{ app_base_path }}/generated/"
+  command: chown -R {{ server_web_user }} {{ item }}/
+  with_items: magento_writable_dirs
 
 - name: install cron 
-  shell: chdir={{ app_base_path }}/ ./bin/magento cron:install
+  shell: chdir={{ httpd_base_dir }}{{ app_base_path }}/ ./bin/magento cron:install
   become: yes
   become_method: sudo
   become_user: "{{ server_web_user }}"
   ignore_errors: yes
 
 - name: run cron 
-  shell: chdir={{ app_base_path }}/ ./bin/magento cron:run
+  shell: chdir={{ httpd_base_dir }}{{ app_base_path }}/ ./bin/magento cron:run
   become: yes
   become_method: sudo
   become_user: "{{ server_web_user }}"
 
 - name: get admin uri 
-  shell: chdir={{ app_base_path }}/ ./bin/magento info:adminuri
+  shell: chdir={{ httpd_base_dir }}{{ app_base_path }}/ ./bin/magento info:adminuri
   register: admin_uri
 
 - debug: msg="{{ admin_uri.stdout }}"

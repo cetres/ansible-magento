@@ -2,8 +2,8 @@
 - name: install httpd on CentOS/RHEL
   yum:
     name: 
-      - httpd24
-      - httpd24-tools
+      - httpd24-httpd
+      - httpd24-httpd-tools
       - httpd24-mod_ssl
     state: present
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
@@ -17,17 +17,27 @@
     state: present
   when: ansible_distribution != 'CentOS' and ansible_distribution != 'Red Hat Enterprise Linux'
 
+- set_fact:
+    httpd_base_dir: /opt/rh/httpd24/root
+    httpd_service: httpd24-httpd
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+- set_fact:
+    httpd_base_dir: ""
+    httpd_service: httpd
+  when: ansible_distribution != 'CentOS' and ansible_distribution != 'Red Hat Enterprise Linux'
+
 - name: remove unused modules
   file: 
     state: absent
     path:
-    - /etc/httpd/conf.d/autoindex.conf
-    - /etc/httpd/conf.d/welcome.conf
+    - "{{ httpd_base_dir }}/etc/httpd/conf.d/autoindex.conf"
+    - "{{ httpd_base_dir }}/etc/httpd/conf.d/welcome.conf"
 
 - name: create httpd configuration file
-  template: src=magento.conf.j2 dest=/etc/httpd/conf.d/magento.conf
+  template: src=magento.conf.j2 dest={{ httpd_base_dir }}/etc/httpd/conf.d/magento.conf
   notify:
   - restart httpd
 
 - name: httpd initial start
-  service: name=httpd state=started enabled=yes
+  service: name={{ httpd_service }} state=started enabled=yes
