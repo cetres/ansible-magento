@@ -2,9 +2,9 @@
 - name: install httpd on CentOS/RHEL
   yum:
     name: 
-      - httpd
-      - httpd-tools
-      - mod_ssl
+      - httpd24
+      - httpd24-tools
+      - httpd24-mod_ssl
     state: present
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 

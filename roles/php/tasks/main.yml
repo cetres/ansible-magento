@@ -3,6 +3,7 @@
   yum:
     state: present
     name: 
+    - rh-php71
     - rh-php71-php
     - rh-php71-php-bcmath
     - rh-php71-php-intl
