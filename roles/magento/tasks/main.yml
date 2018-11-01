@@ -29,10 +29,12 @@
     setype: httpd_sys_rw_content_t
     state: present
   with_items: magento_writable_dirs
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
 - name: apply new SELinux file context to filesystem
   command: restorecon -irv {{ item }}
   with_items: magento_writable_dirs
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
 - name: change dirs permissions
   file:
