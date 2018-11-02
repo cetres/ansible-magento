@@ -30,6 +30,7 @@
 - name: remove unused modules
   file: 
     state: absent
+    force: true
     path:
     - "{{ httpd_base_dir }}/etc/httpd/conf.d/autoindex.conf"
     - "{{ httpd_base_dir }}/etc/httpd/conf.d/welcome.conf"
