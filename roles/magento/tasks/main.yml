@@ -18,37 +18,40 @@
 
 - set_fact:
     magento_writable_dirs:
-      - '{{ httpd_base_dir }}{{ app_base_path }}/app/etc'
-      - '{{ httpd_base_dir }}{{ app_base_path }}/var'
-      - '{{ httpd_base_dir }}{{ app_base_path }}/pub/media'
-      - '{{ httpd_base_dir }}{{ app_base_path }}/generated'
+      - '{{ app_base_path }}/app/etc'
+      - '{{ app_base_path }}/var'
+      - '{{ app_base_path }}/pub/media'
+      - '{{ app_base_path }}/generated'
+      - '{{ app_base_path }}/vendor'
+
+- name: Disable SELinux
+  selinux:
+    policy: targeted
+    state: permissive
+  when: disable_selinux
 
 - name: set SELinux file context
   sefcontext:
+    ftype: d
     target: "{{ item }}(/.*)?"
     setype: httpd_sys_rw_content_t
     state: present
-  with_items: magento_writable_dirs
+  with_items: "{{ magento_writable_dirs }}"
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
 - name: apply new SELinux file context to filesystem
   command: restorecon -irv {{ item }}
-  with_items: magento_writable_dirs
+  with_items: "{{ magento_writable_dirs }}"
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
 - name: change dirs permissions
   file:
-    path: "{{ item }}/"
+    path: "{{ httpd_base_dir }}{{ item }}"
     recurse: yes
-    state: directory
-    mode: 0775
+    mode: u=rwX,g=rwX,o=rX
     owner: "{{ server_web_user }}"
     group: root
-  with_items: magento_writable_dirs
-
-- name: ensure directories are owned by web user
-  command: chown -R {{ server_web_user }} {{ item }}/
-  with_items: magento_writable_dirs
+  with_items: "{{ magento_writable_dirs }}"
 
 - name: install cron 
   shell: chdir={{ httpd_base_dir }}{{ app_base_path }}/ ./bin/magento cron:install

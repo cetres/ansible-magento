@@ -3,4 +3,4 @@ Ansible playbook for Magento and deps installation on cloud images - AWS EC2 AMI
 
 ## Instructions
 Edit hosts file with proper parameters and run the following command:
-`ansible-playbook -i hosts magento.yml`
+`ansible-playbook -i hosts playbooks/install.yml`

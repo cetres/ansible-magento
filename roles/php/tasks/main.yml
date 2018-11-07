@@ -15,6 +15,7 @@
     - rh-php71-php-mcrypt
     - rh-php71-php-soap
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+  notify: reload httpd
 
 - name: set php exec on CentOS/RHEL
   file:
@@ -40,3 +41,4 @@
     - php71-mcrypt
     - php71-soap
   when: ansible_distribution != 'CentOS' and ansible_distribution != 'Red Hat Enterprise Linux'
+  notify: reload httpd

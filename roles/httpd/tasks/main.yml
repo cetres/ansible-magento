@@ -30,10 +30,18 @@
 - name: remove unused modules
   file: 
     state: absent
-    force: true
-    path:
-    - "{{ httpd_base_dir }}/etc/httpd/conf.d/autoindex.conf"
-    - "{{ httpd_base_dir }}/etc/httpd/conf.d/welcome.conf"
+    path: "{{ item }}"
+  with_items:
+  - "{{ httpd_base_dir }}/etc/httpd/conf.d/autoindex.conf"
+  - "{{ httpd_base_dir }}/etc/httpd/conf.d/welcome.conf"
+
+- name: change dirs permissions
+  file:
+    path: "{{ httpd_base_dir }}/usr/share/httpd"
+    recurse: yes
+    mode: u=rwX,g=rwX,o=rX
+    owner: "{{ server_web_user }}"
+    group: root
 
 - name: create httpd configuration file
   template: src=magento.conf.j2 dest={{ httpd_base_dir }}/etc/httpd/conf.d/magento.conf

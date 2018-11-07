@@ -1,2 +1,3 @@
 ---
 app_base_path: "/var/www/html"
+disable_selinux: false
